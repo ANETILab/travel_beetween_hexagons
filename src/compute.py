@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     partials = []
     with Pool(8) as p:
-        partials = p.map(kernel, od[:4].iter_rows(named=True))
+        partials = p.map(kernel, od.iter_rows(named=True))
 
     df = pl.from_records(
         partials, schema=["home_id", "work_id", "length", "time"], orient="row"
