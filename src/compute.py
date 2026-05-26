@@ -1,17 +1,25 @@
-import json
-
 import polars as pl
 import polars_h3 as plh3
 from valhalla import Actor, get_config
 from multiprocessing import Pool
 
 
-def kernel(row, costing: str = "pedestrian"):
+def kernel(row, costing: str = "auto") -> list:
     query = {
         "locations": [row["home_latlng"], row["work_latlng"]],
         "costing": costing,
+        "radius": 20,
     }
-    temp = actor.optimized_route(query)
+    try:
+        temp = actor.optimized_route(query)
+    except:
+        print((row["home_id"], row["work_id"]))
+        return [
+            row["home_id"],
+            row["work_id"],
+            None,
+            None,
+        ]
 
     return [
         row["home_id"],
@@ -22,7 +30,7 @@ def kernel(row, costing: str = "pedestrian"):
 
 
 if __name__ == "__main__":
-    COSTING = "pedestrian"
+    COSTING = "auto"
     od = pl.read_csv("../untracked/od.csv")
     od = od.with_columns(
         plh3.cell_to_latlng(pl.col.home_id).alias("home_latlng"),
