@@ -13,17 +13,17 @@ def kernel(row, costing: str = "auto") -> list:
     try:
         temp = actor.optimized_route(query)
     except:
-        print((row["home_id"], row["work_id"]))
+        print((row["source"], row["target"]))
         return [
-            row["home_id"],
-            row["work_id"],
+            row["source"],
+            row["target"],
             None,
             None,
         ]
 
     return [
-        row["home_id"],
-        row["work_id"],
+        row["source"],
+        row["target"],
         temp["trip"]["summary"]["length"],
         temp["trip"]["summary"]["time"],
     ]
@@ -33,16 +33,16 @@ if __name__ == "__main__":
     COSTING = "auto"
     od = pl.read_csv("../untracked/od.csv")
     od = od.with_columns(
-        plh3.cell_to_latlng(pl.col.home_id).alias("home_latlng"),
-        plh3.cell_to_latlng(pl.col.work_id).alias("work_latlng"),
+        plh3.cell_to_latlng(pl.col.source).alias("home_latlng"),
+        plh3.cell_to_latlng(pl.col.target).alias("work_latlng"),
     ).with_columns(
         pl.struct(
-            id=pl.col("home_id"),
+            id=pl.col("source"),
             lat=pl.col("home_latlng").list.get(0).round(7),
             lon=pl.col("home_latlng").list.get(1).round(7),
         ).alias("home_latlng"),
         pl.struct(
-            id=pl.col("work_id"),
+            id=pl.col("target"),
             lat=pl.col("work_latlng").list.get(0).round(7),
             lon=pl.col("work_latlng").list.get(1).round(7),
         ).alias("work_latlng"),
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         partials = p.map(kernel, od.iter_rows(named=True))
 
     df = pl.from_records(
-        partials, schema=["home_id", "work_id", "length", "time"], orient="row"
+        partials, schema=["source", "target", "length", "time"], orient="row"
     )
     df = df.with_columns(pl.lit(COSTING).alias("costing"))
     df.write_csv(f"../output/od_travel_{COSTING}.csv")
